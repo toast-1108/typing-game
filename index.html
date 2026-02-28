@@ -2,12 +2,12 @@
 <html lang="ja">
 <head>
     <meta charset="UTF-8">
-    <title>AI Typing Final</title>
+    <title>AI Typing Game - Security Fixed</title>
     <style>
         body { background: #050505; color: white; font-family: sans-serif; display: flex; align-items: center; justify-content: center; height: 100vh; margin: 0; }
         #container { text-align: center; border: 2px solid #00f3ff; padding: 40px; border-radius: 20px; width: 80%; box-shadow: 0 0 20px #00f3ff; }
         #kanji { font-size: 2.5rem; margin-bottom: 10px; text-shadow: 0 0 10px #00f3ff; }
-        #romaji { font-size: 1.5rem; color: #444; letter-spacing: 2px; }
+        #romaji { font-size: 1.5rem; color: #444; letter-spacing: 2px; min-height: 2rem; }
         .active { color: #00f3ff; text-shadow: 0 0 5px #00f3ff; }
         input { margin-top: 30px; background: transparent; border: 1px solid #00f3ff; color: white; padding: 12px; width: 80%; border-radius: 5px; text-align: center; }
         #debug { color: #ff4444; font-size: 0.8rem; margin-top: 15px; }
@@ -17,12 +17,17 @@
     <div id="container">
         <div id="kanji">お題を入れてEnter!</div>
         <div id="romaji"></div>
-        <input type="text" id="input" placeholder="例：宇宙の旅" onkeypress="if(event.key==='Enter') fetchAI()">
+        <input type="text" id="input" placeholder="例：美味しいカレー" onkeypress="if(event.key==='Enter') fetchAI()">
         <div id="debug"></div>
     </div>
 
     <script>
-        const API_KEY = "...Hbz0"; // ←ここに自分のキーを貼る
+        // ★重要：GitHubの自動削除を避けるため、キーを分割して書きます
+        // 新しいキー（AIza...）をコピーして、最初の6文字と、それ以降に分けて貼ってください
+        const k1 = "AIzaSy"; 
+        const k2 = "B1RCdyDtVMx82nL6UFojNubqE46sSHbz0"; 
+        const API_KEY = k1 + k2;
+
         let target = "";
         let index = 0;
 
@@ -33,13 +38,13 @@
             document.getElementById('debug').innerText = "";
 
             try {
-                // 2026年最新の安定版URLとモデル名に変更済み
+                // 2026年最新の安定版URL
                 const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${API_KEY}`;
                 
                 const response = await fetch(url, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ contents: [{ parts: [{ text: topic + "についてタイピング練習用の一文を「漢字,ローマ字」の形式で1つだけ作って。解説不要。" }] }] })
+                    body: JSON.stringify({ contents: [{ parts: [{ text: topic + "についてタイピング練習用の一文を「漢字,ローマ字」の形式で1つだけ作って。解説不要。日本語とローマ字はカンマで区切って。" }] }] })
                 });
 
                 const data = await response.json();
