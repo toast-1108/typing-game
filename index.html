@@ -2,92 +2,74 @@
 <html lang="ja">
 <head>
     <meta charset="UTF-8">
-    <title>AI Typing Nexus - Stable</title>
+    <title>AI Typing Final</title>
     <style>
-        :root { --neon: #00f3ff; --bg: #050505; }
-        body { background: var(--bg); color: white; font-family: sans-serif; display: flex; align-items: center; justify-content: center; height: 100vh; margin: 0; }
-        #container { text-align: center; border: 2px solid var(--neon); padding: 40px; border-radius: 20px; width: 80%; max-width: 600px; }
-        #kanji { font-size: 2.5rem; margin-bottom: 10px; text-shadow: 0 0 10px var(--neon); min-height: 3.5rem; }
-        #romaji { font-size: 1.5rem; color: #444; letter-spacing: 2px; min-height: 2rem; }
-        .active { color: var(--neon); text-shadow: 0 0 5px var(--neon); }
-        #topicInput { margin-top: 30px; background: transparent; border: 1px solid var(--neon); color: white; padding: 12px; width: 80%; border-radius: 5px; text-align: center; font-size: 1rem; }
-        #debug { margin-top: 20px; font-size: 0.8rem; color: #ff4444; }
+        body { background: #050505; color: white; font-family: sans-serif; display: flex; align-items: center; justify-content: center; height: 100vh; margin: 0; }
+        #container { text-align: center; border: 2px solid #00f3ff; padding: 40px; border-radius: 20px; width: 80%; box-shadow: 0 0 20px #00f3ff; }
+        #kanji { font-size: 2.5rem; margin-bottom: 10px; text-shadow: 0 0 10px #00f3ff; }
+        #romaji { font-size: 1.5rem; color: #444; letter-spacing: 2px; }
+        .active { color: #00f3ff; text-shadow: 0 0 5px #00f3ff; }
+        input { margin-top: 30px; background: transparent; border: 1px solid #00f3ff; color: white; padding: 12px; width: 80%; border-radius: 5px; text-align: center; }
+        #debug { color: #ff4444; font-size: 0.8rem; margin-top: 15px; }
     </style>
 </head>
 <body>
     <div id="container">
-        <div id="kanji">お題を入力して開始</div>
+        <div id="kanji">お題を入れてEnter!</div>
         <div id="romaji"></div>
-        <input type="text" id="topicInput" placeholder="例：美味しい食べ物" onkeypress="if(event.key==='Enter') fetchAI()">
+        <input type="text" id="input" placeholder="例：宇宙の旅" onkeypress="if(event.key==='Enter') fetchAI()">
         <div id="debug"></div>
     </div>
 
     <script>
-        const API_KEY = "AIzaSyBN_AwrvJ67oug6cVpb9ZxYRIrpxevJEkk"; // ★ここにキーを貼る★
-        let targetRomaji = "";
-        let currentIndex = 0;
+        const API_KEY = "AIzaSyBN_AwrvJ67oug6cVpb9ZxYRIrpxevJEkk"; // ←ここに自分のキーを貼る
+        let target = "";
+        let index = 0;
 
         async function fetchAI() {
-            const topic = document.getElementById('topicInput').value;
-            const kanjiDisp = document.getElementById('kanji');
-            const debugDisp = document.getElementById('debug');
-            
+            const topic = document.getElementById('input').value;
             if(!topic) return;
-
-            kanjiDisp.innerText = "生成中...";
-            debugDisp.innerText = "";
-            document.getElementById('romaji').innerText = "";
-
-            // AIへの指示をより厳密に
-            const prompt = `「${topic}」についてタイピング練習用の短い一文を作ってください。
-必ず以下の形式だけで返してください。余計な挨拶や説明は一切禁止します。
-形式：漢字（または日本語）,ひらがなをそのまま繋げたローマ字
-例：猫が好き,nekogasuki`;
+            document.getElementById('kanji').innerText = "AIが考え中...";
+            document.getElementById('debug').innerText = "";
 
             try {
-                const resp = await fetch(`https://generativelanguage.googleapis.com/v1/models/gemini-2.0-flash:generateContent?key=${API_KEY}`, {
+                // 2026年最新の安定版URLとモデル名に変更済み
+                const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${API_KEY}`;
+                
+                const response = await fetch(url, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }] })
+                    body: JSON.stringify({ contents: [{ parts: [{ text: topic + "についてタイピング練習用の一文を「漢字,ローマ字」の形式で1つだけ作って。解説不要。" }] }] })
                 });
 
-                const data = await resp.json();
+                const data = await response.json();
+                if(data.error) throw new Error(data.error.message);
+
+                const resText = data.candidates[0].content.parts[0].text.trim();
+                const [k, r] = resText.split(',');
                 
-                if (data.error) {
-                    throw new Error(`Google APIエラー: ${data.error.message}`);
-                }
-
-                const aiText = data.candidates[0].content.parts[0].text.trim();
-                const [k, r] = aiText.split(',');
-
-                if (!r) throw new Error("AIの返答形式が正しくありません。もう一度試してください。");
-
-                kanjiDisp.innerText = k;
-                targetRomaji = r.toLowerCase().replace(/[^a-z]/g, "");
-                currentIndex = 0;
-                document.getElementById('topicInput').value = "";
+                document.getElementById('kanji').innerText = k;
+                target = r.toLowerCase().replace(/[^a-z]/g, "");
+                index = 0;
+                document.getElementById('input').value = "";
                 render();
-
             } catch (e) {
-                kanjiDisp.innerText = "エラー発生";
-                debugDisp.innerText = e.message;
-                console.error(e);
+                document.getElementById('kanji').innerText = "エラー発生";
+                document.getElementById('debug').innerText = e.message;
             }
         }
 
         function render() {
-            const typed = `<span class="active">${targetRomaji.substring(0, currentIndex)}</span>`;
-            const untyped = targetRomaji.substring(currentIndex);
-            document.getElementById('romaji').innerHTML = typed + untyped;
+            document.getElementById('romaji').innerHTML = `<span class="active">${target.substring(0, index)}</span>` + target.substring(index);
         }
 
         window.addEventListener('keydown', (e) => {
-            if (targetRomaji && e.key === targetRomaji[currentIndex]) {
-                currentIndex++;
+            if (target && e.key === target[index]) {
+                index++;
                 render();
-                if (currentIndex === targetRomaji.length) {
+                if (index === target.length) {
                     document.getElementById('kanji').innerText = "CLEAR!!";
-                    targetRomaji = "";
+                    target = "";
                 }
             }
         });
